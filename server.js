@@ -64,7 +64,8 @@ io.on('connection', (socket) => {
   socket.on('ice-candidate', (data) => {
     console.log('ICE candidate received');
     
-    // CORREZIONE: Inoltra l'intero oggetto candidato WebRTC (senza il campo 'target' che serve solo al server).
+    // CORREZIONE: Crea un payload piatto con i campi essenziali per WebRTC.
+    // Questo previene l'annidamento errato e garantisce l'inoltro di tutti i dati.
     const candidatePayload = {
       candidate: data.candidate,
       sdpMid: data.sdpMid,
@@ -72,10 +73,10 @@ io.on('connection', (socket) => {
     };
 
     if (data.target === 'sender' && sender) {
-      // Inoltra il candidato al sender (sender.py)
+      // Inoltra l'intero oggetto candidato al sender (sender.py)
       io.to(sender).emit('ice-candidate', candidatePayload);
     } else if (data.target === 'receiver' && receiver) {
-      // Inoltra il candidato al receiver (index.html)
+      // Inoltra l'intero oggetto candidato al receiver (index.html)
       io.to(receiver).emit('ice-candidate', candidatePayload);
     }
   });
