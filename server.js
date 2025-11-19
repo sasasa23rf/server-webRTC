@@ -63,10 +63,20 @@ io.on('connection', (socket) => {
 
   socket.on('ice-candidate', (data) => {
     console.log('ICE candidate received');
+    
+    // CORREZIONE: Inoltra l'intero oggetto candidato WebRTC (senza il campo 'target' che serve solo al server).
+    const candidatePayload = {
+      candidate: data.candidate,
+      sdpMid: data.sdpMid,
+      sdpMLineIndex: data.sdpMLineIndex
+    };
+
     if (data.target === 'sender' && sender) {
-      io.to(sender).emit('ice-candidate', data.candidate);
+      // Inoltra il candidato al sender (sender.py)
+      io.to(sender).emit('ice-candidate', candidatePayload);
     } else if (data.target === 'receiver' && receiver) {
-      io.to(receiver).emit('ice-candidate', data.candidate);
+      // Inoltra il candidato al receiver (index.html)
+      io.to(receiver).emit('ice-candidate', candidatePayload);
     }
   });
 
