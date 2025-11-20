@@ -1,17 +1,14 @@
 {
-  "name": "webrtc-video-streaming",
-  "version": "1.0.0",
-  "description": "WebRTC video streaming server with Express TURN",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "socket.io": "^4.6.1",
-    "cors": "^2.8.5"
-  },
-  "engines": {
-    "node": ">=14.0.0"
-  }
+    "name": "webrtc-signaling-server",
+    "version": "1.0.0",
+    "description": "Simple signaling server for WebRTC",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.18.2",
+        "socket.io": "^4.7.2"
+    }
 }
