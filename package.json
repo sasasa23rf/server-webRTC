@@ -1,17 +1,16 @@
 {
-  "name": "mediasoup-demo",
+  "name": "video-bridge",
   "version": "1.0.0",
-  "description": "Simple Mediasoup Broadcaster/Viewer",
+  "description": "Ponte video per Raspberry Pi",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
-    "mediasoup": "^3.19.0",
-    "socket.io": "^4.7.5"
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
   },
   "engines": {
-    "node": ">=20.0.0" 
+    "node": ">=14.x"
   }
 }
