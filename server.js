@@ -16,10 +16,10 @@ const PORT = process.env.PORT || 3000;
 
 // --- CONFIGURAZIONE GLOBALE CONDIVISA ---
 let currentConfig = {
-    target_fps: 30,
+    target_fps: 50,
     width: 640,
     height: 480,
-    jpeg_quality: 60
+    jpeg_quality: 50
 };
 
 app.get('/', (req, res) => {
@@ -33,9 +33,8 @@ io.on('connection', (socket) => {
     socket.emit('config_updated', currentConfig);
 
     // 2. STREAMING VIDEO (Raspberry -> Browser)
-    // MODIFICA CRUCIALE: Riceve 'video_frame' e inoltra 'video_frame'
     socket.on('video_frame', (data) => {
-        socket.broadcast.emit('video_frame', data);
+        socket.broadcast.emit('stream_display', data);
     });
 
     // 3. CONFIGURAZIONE (Browser <-> Server <-> Raspberry)
@@ -49,14 +48,17 @@ io.on('connection', (socket) => {
         io.emit('config_updated', currentConfig);
     });
 
-    // 4. SISTEMA VELOCITÀ
+    // 4. SISTEMA VELOCITÀ (Nuovo)
+    // Il browser attiva/disattiva il monitoraggio
     socket.on('toggle_speed_monitoring', (isActive) => {
-        // Inoltra il comando a tutti (Raspberry incluso)
+        console.log(`Richiesta monitoraggio velocità: ${isActive}`);
+        // Inoltriamo il comando a TUTTI i dispositivi (incluso il Raspberry con velocita.py)
         io.emit('set_speed_monitoring', isActive);
     });
 
+    // Il Raspberry invia i dati di velocità
     socket.on('speed_data', (data) => {
-        // Inoltra i dati al browser
+        // Inoltriamo i dati al browser per mostrarli
         socket.broadcast.emit('display_speed', data);
     });
 
