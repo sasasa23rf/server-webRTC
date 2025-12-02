@@ -23,10 +23,11 @@ let currentConfig = {
 };
 
 // ⭐ NUOVE VARIABILI PER LA GESTIONE ANTI-LAG DEL SERVER ⭐
-let lastFrameData = null;      // Contiene l'ultimo frame (il più fresco) ricevuto dal Raspberry
-let isSendingFrame = false;    // Flag per sapere se stiamo già cercando di inviare
+// Queste variabili servono a garantire che solo l'ultimo frame ricevuto venga inoltrato.
+let lastFrameData = null;      
+let isSendingFrame = false;    
 
-// ⭐ FUNZIONE CHE INVIA SOLO L'ULTIMO FRAME RICEVUTO ⭐
+// ⭐ FUNZIONE CHE INVIA SOLO L'ULTIMO FRAME RICEVUTO (MASSIMA REATTIVITÀ) ⭐
 function sendLatestFrame() {
     // 1. Controlla se c'è un frame da inviare E se non siamo già in fase di invio
     if (!lastFrameData || isSendingFrame) {
@@ -37,18 +38,13 @@ function sendLatestFrame() {
     isSendingFrame = true; 
     
     const frameToSend = lastFrameData; // Preleva il frame più recente
-    lastFrameData = null;              // ⭐ SVUOTA il buffer: questo fa sì che i frame più vecchi
-                                       // che sono rimasti in coda vengano scartati se arrivano
-                                       // prima del prossimo ciclo.
+    lastFrameData = null;              // ⭐ SVUOTA il buffer per scartare i frame vecchi in arrivo ⭐
     
-    // Tempo di attesa minimo basato sul target FPS (50 FPS -> 20ms)
-    const delayTime = 1000 / currentConfig.target_fps;
-
     // Invia il frame a tutti i client (browser)
-    // Usiamo io.emit perché vogliamo raggiungere tutti i client che visualizzano il video
     io.emit('stream_display', frameToSend); 
 
-    // 2. Dopo un breve ritardo, sblocca l'invio
+    // 2. Dopo un ritardo minimo (1ms), sblocca l'invio.
+    // Il ritardo minimo assicura che il server sia reattivo ma non blocchi il ciclo.
     setTimeout(() => {
         isSendingFrame = false;
         
@@ -56,7 +52,7 @@ function sendLatestFrame() {
         if (lastFrameData) { 
             sendLatestFrame();
         }
-    }, delayTime); 
+    }, 1); // Ritardo minimo per massima reattività (Nessun blocco basato su FPS)
 }
 
 
@@ -72,8 +68,7 @@ io.on('connection', (socket) => {
 
     // 2. STREAMING VIDEO (Raspberry -> Browser)
     socket.on('video_frame', (data) => {
-        // ⭐ NUOVA LOGICA: NON INOLTRARE IMMEDIATAMENTE
-        // Aggiorna solo il frame più recente e tenta l'invio.
+        // ⭐ NUOVA LOGICA: Aggiorna solo il frame più recente e tenta l'invio immediato.
         lastFrameData = data;
         sendLatestFrame();
     });
@@ -86,18 +81,20 @@ io.on('connection', (socket) => {
     socket.on('update_config', (newConfig) => {
         console.log('Nuova configurazione ricevuta:', newConfig);
         currentConfig = { ...currentConfig, ...newConfig };
-        
-        // Se si aggiorna l'FPS target, il timer di sendLatestFrame si aggiornerà al prossimo frame
         io.emit('config_updated', currentConfig);
     });
 
     // 4. SISTEMA VELOCITÀ (Nuovo)
+    // Il browser attiva/disattiva il monitoraggio
     socket.on('toggle_speed_monitoring', (isActive) => {
         console.log(`Richiesta monitoraggio velocità: ${isActive}`);
+        // Inoltriamo il comando a TUTTI i dispositivi (incluso il Raspberry con velocita.py)
         io.emit('set_speed_monitoring', isActive);
     });
 
+    // Il Raspberry invia i dati di velocità
     socket.on('speed_data', (data) => {
+        // Inoltriamo i dati al browser per mostrarli
         socket.broadcast.emit('display_speed', data);
     });
 
